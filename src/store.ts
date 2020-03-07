@@ -10,8 +10,6 @@ export type Getter<T> = () => T;
 
 export type Setter<T> = (valueOrReducer: ValueOrReducer<T>) => T;
 
-export type Updater<T> = <A>(...args: A[]) => T;
-
 export type Unsubscribe = () => void;
 
 export type Subscriber<T> = (listener: Listener<T>) => Unsubscribe;
@@ -24,8 +22,7 @@ export type ReadonlyStore<T> = {
 };
 
 export type Store<T> = ReadonlyStore<T> & {
-  set?: Setter<T>;
-  update?: Updater<T>;
+  set: Setter<T>;
 };
 
 export type Composite<T> = Store<T> & {
@@ -53,7 +50,7 @@ const IO = Symbol('IO');
 const isReducer = <T>(valueOrReducer: ValueOrReducer<T>): valueOrReducer is Reducer<T> =>
   typeof valueOrReducer === 'function';
 
-const createStore = <T>(initialState: T, update?: Updater<T>): Store<T> => {
+const createStore = <T>(initialState: T): Store<T> => {
   let state = initialState;
   const listeners = new Set<Listener<T>>();
 
@@ -73,10 +70,10 @@ const createStore = <T>(initialState: T, update?: Updater<T>): Store<T> => {
     return () => listeners.delete(listener);
   };
 
-  return update ? { get, set, update, subscribe } : { get, set, subscribe };
+  return { get, set, subscribe };
 };
 
-const createCompositeStore = <T>(assignments: Assignments<T>, update?: Updater<T>): Composite<T> => {
+const createCompositeStore = <T>(assignments: Assignments<T>): Composite<T> => {
   let blockListening = false;
 
   const get: Getter<T> = () =>
@@ -104,7 +101,7 @@ const createCompositeStore = <T>(assignments: Assignments<T>, update?: Updater<T
     return () => unsubscribes.forEach(unsubscribe => unsubscribe());
   };
 
-  return update ? { get, set, update, subscribe, assignments } : { get, set, subscribe, assignments };
+  return { get, set, subscribe, assignments } as Composite<T>;
 };
 
 const createSelectorStore = <T, D1, D2>(
