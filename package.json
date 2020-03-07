@@ -5,10 +5,10 @@
   "main": "dist/index.js",
   "module": "dist/index.es.js",
   "jsnext:main": "dist/index.es.js",
-  "types": "dist/types.d.ts",
+  "types": "types/index.d.ts",
   "scripts": {
     "start": "rollup -c -w",
-    "build": "rollup -c",
+    "build": "NODE_ENV=production rollup -c",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -16,7 +16,8 @@
     "url": "git+https://github.com/jayhasyee/use.io.git"
   },
   "files": [
-    "dist"
+    "dist",
+    "types"
   ],
   "keywords": [],
   "author": "",
@@ -29,13 +30,15 @@
     "react": "^16.8"
   },
   "devDependencies": {
-    "@types/react": "^16.9.23",
+    "@babel/core": "^7.8.7",
+    "@babel/preset-env": "^7.8.7",
+    "@rollup/plugin-commonjs": "^11.0.2",
+    "@rollup/plugin-node-resolve": "^7.1.1",
     "rollup": "^1.32.1",
-    "rollup-plugin-commonjs": "^10.1.0",
+    "rollup-plugin-babel": "^4.4.0",
     "rollup-plugin-delete": "^1.2.0",
-    "rollup-plugin-node-resolve": "^5.2.0",
     "rollup-plugin-peer-deps-external": "^2.2.2",
-    "rollup-plugin-typescript2": "^0.26.0",
     "typescript": "^3.8.3"
-  }
+  },
+  "dependencies": {}
 }

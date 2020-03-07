@@ -1,4 +1,4 @@
-import io from '../src/index';
+import io from '..';
 
 const useCounter = io(10);
 const [count, setCount] = useCounter();
