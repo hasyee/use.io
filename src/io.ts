@@ -16,7 +16,7 @@ export type Unsubscribe = () => void;
 
 export type Subscriber<T> = (listener: Listener<T>) => Unsubscribe;
 
-export type Combiner<T, D> = (...args: Array<keyof D>) => T;
+export type Combiner<T, D1, D2> = (...args: DependencyArgs<D1, D2>) => T;
 
 export type ReadonlyIO<T> = {
   get: Getter<T>;
@@ -32,13 +32,17 @@ export type Composite<T> = IO<T> & {
   assignments: Assignments<T>;
 };
 
-export type Selector<T, D> = IO<T> & {
-  dependencies: IO<keyof D>[];
+export type Selector<T, D1, D2> = ReadonlyIO<T> & {
+  dependencies: Dependencies<D1, D2>;
 };
 
 export type Assignments<T> = {
   readonly [P in keyof T]: IO<T[P]>;
 };
+
+export type Dependencies<D1, D2> = [IO<D1>, IO<D2>?];
+
+export type DependencyArgs<D1, D2> = [D1, D2?];
 
 /** FUNCTIONS **/
 
@@ -99,11 +103,11 @@ const compose = <T>(assignments: Assignments<T>, update?: Updater<T>): Composite
   return { get, set, subscribe, update, assignments };
 };
 
-const select = <T, D>(combiner: Combiner<T, D>, dependencies: IO<keyof D>[]): Selector<T, D> => {
-  let prevValues: Array<keyof D>;
+const select = <T, D1, D2>(combiner: Combiner<T, D1, D2>, dependencies: Dependencies<D1, D2>): Selector<T, D1, D2> => {
+  let prevValues: DependencyArgs<D1, D2>;
 
   const get: Getter<T> = () => {
-    const values = dependencies.map(io => io.get());
+    const values = dependencies.map(io => io!.get()) as DependencyArgs<D1, D2>;
     const value = combiner(...values);
     prevValues = values;
     return value;
@@ -111,7 +115,7 @@ const select = <T, D>(combiner: Combiner<T, D>, dependencies: IO<keyof D>[]): Se
 
   const subscribe: Subscriber<T> = listener => {
     const unsubscribes = dependencies.map((io, i) =>
-      io.subscribe(nextValue => {
+      io!.subscribe((nextValue: D1 | D2) => {
         if (nextValue !== prevValues[i]) listener(get());
       })
     );
