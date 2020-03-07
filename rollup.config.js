@@ -1,38 +1,34 @@
-import typescript from 'rollup-plugin-typescript2';
-import commonjs from 'rollup-plugin-commonjs';
-import external from 'rollup-plugin-peer-deps-external';
-import resolve from 'rollup-plugin-node-resolve';
 import del from 'rollup-plugin-delete';
+import external from 'rollup-plugin-peer-deps-external';
+import resolve from '@rollup/plugin-node-resolve';
+import commonjs from '@rollup/plugin-commonjs';
+import babel from 'rollup-plugin-babel';
 
 import pkg from './package.json';
 
+const isDev = process.env.NODE_ENV !== 'production';
+
 export default {
-  input: 'src/index.ts',
+  input: 'src/index.js',
   output: [
     {
       file: pkg.main,
       format: 'cjs',
       exports: 'named',
-      sourcemap: true
+      sourcemap: isDev
     },
     {
       file: pkg.module,
       format: 'es',
       exports: 'named',
-      sourcemap: true
+      sourcemap: isDev
     }
   ],
   plugins: [
     del({ targets: 'dist/*' }),
     external(),
     resolve(),
-    typescript({
-      rollupCommonJSResolveHack: true,
-      exclude: '**/tests/**',
-      clean: true
-    }),
-    commonjs({
-      include: ['node_modules/**']
-    })
+    commonjs({ include: ['node_modules/**'] }),
+    babel({ babelrc: false, presets: [['@babel/env', { modules: false }]], exclude: 'node_modules/**' })
   ]
 };
