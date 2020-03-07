@@ -1,15 +1,21 @@
-import { useState, useEffect } from 'react';
-import { io, IO, Selector, Setter, Updater, Assignments, Combiner, Dependencies } from './io';
+import { useState, useEffect, useMemo } from 'react';
+import {
+  createStore,
+  createCompositeStore,
+  createSelectorStore,
+  Store,
+  Selector,
+  Setter,
+  Updater,
+  Assignments,
+  Combiner,
+  Dependencies,
+  IO
+} from './store';
 
-export type Hook<T> = {
-  (): [T, Setter<T>];
-  io: IO<T>;
-};
+export type Hook<T> = () => [T, Setter<T>];
 
-export type SelectorHook<T> = {
-  (): T;
-  io: IO<T>;
-};
+export type SelectorHook<T> = () => T;
 
 export type HookAssignments<T> = {
   readonly [P in keyof T]: Hook<T[P]>;
@@ -17,32 +23,43 @@ export type HookAssignments<T> = {
 
 export type HookDependencies<D1, D2> = [Hook<D1>, Hook<D2>?];
 
-function use<T, D1, D2>(io: Selector<T, D1, D2>): T;
-function use<T>(io: IO<T>): [T, Setter<T>];
+type IUse = {
+  <T, D1, D2>(store: Selector<T, D1, D2>): T;
+  <T>(store: Store<T>): [T, Setter<T>];
+};
 
-function use(io: any): any {
-  const update = 'set' in io && 'updater' in io ? <A>(...args: Array<keyof A>) => io.set!(io.update!(...args)) : io.set;
-  const [state, setState] = useState(io.get());
-  useEffect(() => io.subscribe(setState), [setState]);
+const use: IUse = (store: any): any => {
+  const update = useMemo(
+    () => ('set' in store && 'update' in store ? <A>(...args: A[]) => store.set!(store.update!(...args)) : store.set),
+    [store]
+  );
+  const [state, setState] = useState(store.get());
+  useEffect(() => store.subscribe(setState), [setState]);
   return update ? [state, update] : state;
-}
+};
 
-function createHookFromIO<T, D1, D2>(io: Selector<T, D1, D2>): SelectorHook<T>;
-function createHookFromIO<T>(io: IO<T>): Hook<T>;
+const useNot: IUse = (store: any): any => {
+  const update =
+    'set' in store && 'update' in store ? <A>(...args: A[]) => store.set!(store.update!(...args)) : store.set;
+  return update ? [store.get(), update] : store.get();
+};
 
-function createHookFromIO(io: any): any {
-  const useIO = () => use(io);
-  useIO.io = io;
-  return useIO;
-}
+const wrap: {
+  <T, D1, D2>(store: Selector<T, D1, D2>): SelectorHook<T>;
+  <T>(store: Store<T>): Hook<T>;
+} = (store: any): any => {
+  const useStore = (useHook: boolean = true) => (useHook ? use(store) : useNot(store));
+  Object.defineProperty(useStore, IO, { value: store, configurable: false, enumerable: false, writable: false });
+  return useStore;
+};
 
-const createIOHook = <T>(initialState: T, update?: Updater<T>) => createHookFromIO(io(initialState, update));
+const createStateHook = <T>(initialState: T, update?: Updater<T>) => wrap(createStore(initialState, update));
 
 const createCompositeHook = <T>(hookAssignments: HookAssignments<T>, update?: Updater<T>) =>
-  createHookFromIO(
-    io.compose(
+  wrap(
+    createCompositeStore(
       Object.keys(hookAssignments).reduce(
-        (acc, key) => ({ ...acc, [key]: hookAssignments[key].io }),
+        (acc, key) => ({ ...acc, [key]: hookAssignments[key][IO] }),
         {} as Assignments<T>
       ),
       update
@@ -50,11 +67,12 @@ const createCompositeHook = <T>(hookAssignments: HookAssignments<T>, update?: Up
   );
 
 const createSelectorHook = <T, D1, D2>(combiner: Combiner<T, D1, D2>, hookDependencies: HookDependencies<D1, D2>) =>
-  createHookFromIO(io.select(combiner, hookDependencies.map(hook => hook!.io) as Dependencies<D1, D2>));
+  wrap(createSelectorStore(combiner, hookDependencies.map(hook => hook![IO]) as Dependencies<D1, D2>));
 
-createIOHook.compose = createCompositeHook;
-createIOHook.select = createSelectorHook;
+const createConstantHook = <T>(constant: T) => () => constant;
 
-use.io = createIOHook;
+createStateHook.compose = createCompositeHook;
+createStateHook.select = createSelectorHook;
+createStateHook.constant = createConstantHook;
 
-export { use, createHookFromIO as createHook };
+export { createStateHook, createCompositeHook, createSelectorHook, createConstantHook };
