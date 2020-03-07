@@ -1,5 +1,5 @@
 export type Diff<T> = {
-  [K in keyof T]?: T[K];
+  [K in keyof T]?: Diff<T[K]>;
 };
 
 const isObject = (target: any): target is Object => typeof target === 'object' && !Array.isArray(target);

@@ -1,4 +1,5 @@
-export * from './io';
-export * from './updaters';
+import { createStateHook } from './hooks';
 export * from './hooks';
+export * from './updaters';
 export * from './dev';
+export default createStateHook;
