@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
-import { createStore, createCompositeStore, createSelectorStore, IO } from './store';
+import { IO } from './helpers';
+import { createStore, createCompositeStore, createSelectorStore } from './store';
 
 const use = (store, updater) => {
   const update = useMemo(() => (!!store.set && !!updater ? (...args) => store.set(updater(...args)) : store.set), [
@@ -22,9 +23,9 @@ const wrap = (store, updater) => {
   return useStore;
 };
 
-const createStateHook = (initialState, updater) => wrap(createStore(initialState), updater);
+export const io = (initialState, updater) => wrap(createStore(initialState), updater);
 
-const createCompositeHook = (hookAssignments, updater) =>
+export const compose = (hookAssignments, updater) =>
   wrap(
     createCompositeStore(
       Object.keys(hookAssignments).reduce((acc, key) => ({ ...acc, [key]: hookAssignments[key][IO] }), {})
@@ -32,7 +33,7 @@ const createCompositeHook = (hookAssignments, updater) =>
     updater
   );
 
-const createSelectorHook = (combiner, hookDependencies) =>
+export const select = (combiner, hookDependencies) =>
   wrap(
     createSelectorStore(
       combiner,
@@ -40,6 +41,4 @@ const createSelectorHook = (combiner, hookDependencies) =>
     )
   );
 
-const createConstantHook = constant => () => constant;
-
-export { createStateHook, createCompositeHook, createSelectorHook, createConstantHook };
+export const constant = c => () => c;

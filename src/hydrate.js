@@ -3,7 +3,7 @@ import { getStoreHooks, getStoresFromHooks, getPrimitiveStores, getState } from 
 
 const HYDRATOR_ID = '__USE_IO_HYDRATOR__';
 
-export const getHydrator = hooks => {
+export const hydrate = hooks => {
   const stores = getPrimitiveStores(getStoresFromHooks(getStoreHooks(hooks)));
   const isServer = typeof window === 'undefined';
   if (isServer) {

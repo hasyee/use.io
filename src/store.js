@@ -1,7 +1,6 @@
-import { IO } from './helpers';
 const isReducer = valueOrReducer => typeof valueOrReducer === 'function';
 
-const createStore = initialState => {
+export const createStore = initialState => {
   let state = initialState;
   const listeners = new Set();
 
@@ -24,7 +23,7 @@ const createStore = initialState => {
   return { get, set, subscribe };
 };
 
-const createCompositeStore = assignments => {
+export const createCompositeStore = assignments => {
   let blockListening = false;
 
   const get = () => Object.keys(assignments).reduce((acc, key) => ({ ...acc, [key]: assignments[key].get() }), {});
@@ -54,7 +53,7 @@ const createCompositeStore = assignments => {
   return { get, set, subscribe, assignments };
 };
 
-const createSelectorStore = (combiner, dependencies) => {
+export const createSelectorStore = (combiner, dependencies) => {
   let prevValues;
 
   const get = () => {
@@ -75,5 +74,3 @@ const createSelectorStore = (combiner, dependencies) => {
 
   return { get, subscribe, dependencies };
 };
-
-export { createStore, createCompositeStore, createSelectorStore, IO };
