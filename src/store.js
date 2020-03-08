@@ -1,5 +1,4 @@
-const IO = Symbol('IO');
-
+import { IO } from './helpers';
 const isReducer = valueOrReducer => typeof valueOrReducer === 'function';
 
 const createStore = initialState => {
