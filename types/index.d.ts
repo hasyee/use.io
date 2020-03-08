@@ -59,33 +59,29 @@ export type Diff<T> = {
   [K in keyof T]?: Diff<T[K]>;
 };
 
-export function createStateHook<T>(initialState: T): StoreHook<T>;
-export function createStateHook<T, U extends Updater<T>>(
-  initialState: T,
-  updater: U
-): StoreHook<T, Update<T, typeof updater>>;
-
-export function createCompositeHook<T>(hookAssignments: HookAssignments<T>): StoreHook<T>;
-export function createCompositeHook<T, U extends Updater<T>>(
+export function compose<T>(hookAssignments: HookAssignments<T>): StoreHook<T>;
+export function compose<T, U extends Updater<T>>(
   hookAssignments: HookAssignments<T>,
   updater: U
 ): StoreHook<T, Update<T, typeof updater>>;
 
-export function createSelectorHook<T, D1, D2>(
+export function select<T, D1, D2>(
   combiner: Combiner<T, D1, D2>,
   hookDependencies: HookDependencies<D1, D2>
 ): SelectorHook<T>;
 
-export function createConstantHook<T>(constant: T): T;
+export function constant<T>(constant: T): T;
 
 export function deepMergeUpdater<T>(diff: Diff<T>): (state: T) => T;
 
 export function shallowMergeUpdater<T>(diff: Diff<T>): (state: T) => T;
 
-declare const io: typeof createStateHook & {
-  compose: typeof createCompositeHook;
-  select: typeof createSelectorHook;
-  constant: typeof createConstantHook;
+export declare const io: {
+  <T>(initialState: T): StoreHook<T>;
+  <T, U extends Updater<T>>(initialState: T, updater: U): StoreHook<T, Update<T, typeof updater>>;
+  compose: typeof compose;
+  select: typeof select;
+  constant: typeof constant;
   deepMergeUpdater: typeof deepMergeUpdater;
   shallowMergeUpdater: typeof shallowMergeUpdater;
 };
