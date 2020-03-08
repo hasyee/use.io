@@ -23,7 +23,7 @@ const wrap = (store, updater) => {
   return useStore;
 };
 
-export const io = (initialState, updater) => wrap(createStore(initialState), updater);
+export const state = (initialState, updater) => wrap(createStore(initialState), updater);
 
 export const compose = (hookAssignments, updater) =>
   wrap(

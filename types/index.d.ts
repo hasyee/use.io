@@ -59,6 +59,9 @@ export type Diff<T> = {
   [K in keyof T]?: Diff<T[K]>;
 };
 
+export function state<T>(initialState: T): StoreHook<T>;
+export function state<T, U extends Updater<T>>(initialState: T, updater: U): StoreHook<T, Update<T, typeof updater>>;
+
 export function compose<T>(hookAssignments: HookAssignments<T>): StoreHook<T>;
 export function compose<T, U extends Updater<T>>(
   hookAssignments: HookAssignments<T>,
@@ -77,8 +80,7 @@ export function deepMergeUpdater<T>(diff: Diff<T>): (state: T) => T;
 export function shallowMergeUpdater<T>(diff: Diff<T>): (state: T) => T;
 
 export declare const io: {
-  <T>(initialState: T): StoreHook<T>;
-  <T, U extends Updater<T>>(initialState: T, updater: U): StoreHook<T, Update<T, typeof updater>>;
+  state: typeof state;
   compose: typeof compose;
   select: typeof select;
   constant: typeof constant;

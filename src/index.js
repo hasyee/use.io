@@ -8,4 +8,4 @@ export * from './updaters';
 export * from './dev';
 export * from './hydrate';
 
-export default Object.assign(hooks.io, hooks, updaters, dev, hydrate);
+export default { ...hooks, ...updaters, ...dev, ...hydrate };
