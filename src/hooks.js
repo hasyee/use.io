@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { IO } from './helpers';
+import { STORE } from './consts';
 import { createStore, createCompositeStore, createSelectorStore } from './store';
 
 const use = (store, updater) => {
@@ -19,7 +19,7 @@ const useNot = (store, updater) => {
 
 const wrap = (store, updater) => {
   const useStore = (useHook = true) => (useHook ? use(store, updater) : useNot(store, updater));
-  Object.defineProperty(useStore, IO, { value: store, configurable: false, enumerable: false, writable: false });
+  Object.defineProperty(useStore, STORE, { value: store, configurable: false, enumerable: false, writable: false });
   return useStore;
 };
 
@@ -28,7 +28,7 @@ export const io = (initialState, updater) => wrap(createStore(initialState), upd
 export const compose = (hookAssignments, updater) =>
   wrap(
     createCompositeStore(
-      Object.keys(hookAssignments).reduce((acc, key) => ({ ...acc, [key]: hookAssignments[key][IO] }), {})
+      Object.keys(hookAssignments).reduce((acc, key) => ({ ...acc, [key]: hookAssignments[key][STORE] }), {})
     ),
     updater
   );
@@ -37,7 +37,7 @@ export const select = (combiner, hookDependencies) =>
   wrap(
     createSelectorStore(
       combiner,
-      hookDependencies.map(hook => hook[IO])
+      hookDependencies.map(hook => hook[STORE])
     )
   );
 

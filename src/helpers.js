@@ -1,8 +1,8 @@
-export const IO = Symbol('IO');
+import { STORE } from './consts';
 
 export const getStoreHooks = hooks => {
   return Object.keys(hooks)
-    .filter(hookName => IO in hooks[hookName])
+    .filter(hookName => STORE in hooks[hookName])
     .reduce((acc, hookName) => {
       const hook = hooks[hookName];
       const stateName = hookName;
@@ -11,7 +11,7 @@ export const getStoreHooks = hooks => {
 };
 
 export const getStoresFromHooks = hooks => {
-  return Object.keys(hooks).reduce((acc, key) => ({ ...acc, [key]: hooks[key][IO] }), {});
+  return Object.keys(hooks).reduce((acc, key) => ({ ...acc, [key]: hooks[key][STORE] }), {});
 };
 
 export const getPrimitiveStores = stores => {

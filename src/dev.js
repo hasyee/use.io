@@ -1,4 +1,5 @@
-import { IO, getStoreHooks, getStoresFromHooks, getPrimitiveStores, getTopLevelStores, getState } from './helpers';
+import { IO, IS_SERVER } from './consts';
+import { getStoreHooks, getStoresFromHooks, getPrimitiveStores, getTopLevelStores, getState } from './helpers';
 
 export const useDevTools = (
   hooks,
@@ -7,8 +8,6 @@ export const useDevTools = (
     logPrimitivesOnly: false
   }
 ) => {
-  const isServer = typeof window === 'undefined';
-  if (isServer) return;
   const stores = getStoresFromHooks(resolveStateNames(getStoreHooks(hooks)));
   initGlobalObject(stores);
   if (log) initLogger(stores, logPrimitivesOnly);
@@ -34,10 +33,19 @@ const initGlobalObject = stores => {
     getAllState: () => getState(stores)
   };
 
-  Object.defineProperties(window, {
-    [IO]: { value: globalObject, configurable: false, enumerable: false, writable: false },
-    io: { value: globalObject, configurable: false, enumerable: false, writable: false }
-  });
+  if (!IS_SERVER) {
+    if (!(IO in window))
+      Object.defineProperties(window, {
+        [IO]: { value: globalObject, configurable: false, enumerable: false, writable: false },
+        io: { value: globalObject, configurable: false, enumerable: false, writable: false }
+      });
+  } else {
+    if (!(IO in global))
+      Object.defineProperties(global, {
+        [IO]: { value: globalObject, configurable: false, enumerable: false, writable: false },
+        io: { value: globalObject, configurable: false, enumerable: false, writable: false }
+      });
+  }
 };
 
 const initLogger = (stores, primitivesOnly = true) =>
@@ -46,8 +54,8 @@ const initLogger = (stores, primitivesOnly = true) =>
     if (primitivesOnly && isComplex) return;
     stores[stateName].subscribe(state => {
       console.log(stateName, '=', state);
-      if (window[IO].devTools) {
+      /* if (window[IO].devTools) {
         window[IO].devTools.sendLog(stateName, state);
-      }
+      } */
     });
   });

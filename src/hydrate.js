@@ -1,15 +1,13 @@
 import React, { useState, useEffect } from 'react';
+import { HYDRATOR_ID, IS_SERVER } from './consts';
 import { getStoreHooks, getStoresFromHooks, getPrimitiveStores, getState } from './helpers';
 
-const HYDRATOR_ID = '__USE_IO_HYDRATOR__';
 let stores;
-
-const isServer = typeof window === 'undefined';
 
 export const hydrate = hooks => {
   stores = getPrimitiveStores(getStoresFromHooks(getStoreHooks(hooks)));
 
-  if (!isServer) {
+  if (!IS_SERVER) {
     const hiddenInput = window.document.getElementById(HYDRATOR_ID);
     if (!hiddenInput) return;
     const hydratedState = JSON.parse(hiddenInput.value);
