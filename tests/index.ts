@@ -24,12 +24,12 @@ const [comp2, setComp2] = useComp2();
 setComp2(comp2.count1 + 1, comp2.count2 + 1);
 useComp2(false);
 
-const useIsOdd = io.select((n, e) => Boolean(n % 2), [useCounter]);
+const useIsOdd = io.memo((n, e) => Boolean(n % 2), [useCounter]);
 const isOdd = useIsOdd();
 isOdd === true;
 useIsOdd(false);
 
-const useIsEven = io.select(isOdd => !isOdd, [useIsOdd]);
+const useIsEven = io.memo(isOdd => !isOdd, [useIsOdd]);
 const isEven = useIsEven();
 isEven === true;
 useIsEven(false);
