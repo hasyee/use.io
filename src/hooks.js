@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { STORE } from './consts';
-import { createStore, createCompositeStore, createSelectorStore } from './store';
+import { createStore, createCompositeStore, createMemoStore } from './store';
 
 const use = (store, updater) => {
   const update = useMemo(() => (!!store.set && !!updater ? (...args) => store.set(updater(...args)) : store.set), [
@@ -33,11 +33,11 @@ export const compose = (hookAssignments, updater) =>
     updater
   );
 
-export const select = (combiner, hookDependencies) =>
+export const memo = (combiner, dependencies) =>
   wrap(
-    createSelectorStore(
+    createMemoStore(
       combiner,
-      hookDependencies.map(hook => hook[STORE])
+      dependencies.map(hook => hook[STORE])
     )
   );
 

@@ -53,7 +53,7 @@ export const createCompositeStore = assignments => {
   return { get, set, subscribe, assignments };
 };
 
-export const createSelectorStore = (combiner, dependencies) => {
+export const createMemoStore = (combiner, dependencies) => {
   let prevValues;
 
   const get = () => {
