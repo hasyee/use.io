@@ -1,24 +1,43 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useLayoutEffect, useEffect, useCallback, useMemo, useReducer, useRef } from 'react';
 import { STORE } from './consts';
 import { createStore, createCompositeStore, createMemoStore } from './store';
 
-const use = (store, updater) => {
+export const useIsomorphicLayoutEffect =
+  typeof window !== 'undefined' &&
+  typeof window.document !== 'undefined' &&
+  typeof window.document.createElement !== 'undefined'
+    ? useLayoutEffect
+    : useEffect;
+
+const use = (store, updater, isSensitive = true, debugInfo) => {
+  const state = useRef(store.get());
+  state.current = store.get();
+  const [, forceRender] = useReducer(n => n + 1, 0);
+
   const update = useMemo(() => (!!store.set && !!updater ? (...args) => store.set(updater(...args)) : store.set), [
     store,
     updater
   ]);
-  const [state, setState] = useState(store.get());
-  useEffect(() => store.subscribe(setState), [setState]);
-  return update ? [state, update] : state;
-};
 
-const useNot = (store, updater) => {
-  const update = !!store.set && !!updater ? (...args) => store.set(updater(...args)) : store.set;
-  return update ? [store.get(), update] : store.get();
+  const listener = useCallback(nextState => {
+    if (!isSensitive || state.current === nextState) return;
+    forceRender();
+  }, []);
+
+  useIsomorphicLayoutEffect(() => {
+    return store.subscribe(listener);
+  }, []);
+
+  if (update) {
+    const returnValue = [state.current, update];
+    return returnValue;
+  } else {
+    return state.current;
+  }
 };
 
 const wrap = (store, updater) => {
-  const useStore = (useHook = true) => (useHook ? use(store, updater) : useNot(store, updater));
+  const useStore = (isSensitive, debugInfo) => use(store, updater, isSensitive, debugInfo);
   Object.defineProperty(useStore, STORE, { value: store, configurable: false, enumerable: false, writable: false });
   return useStore;
 };
