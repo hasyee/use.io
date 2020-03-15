@@ -1,5 +1,11 @@
 const isReducer = valueOrReducer => typeof valueOrReducer === 'function';
 
+const hasTheSameKeys = (a, b) => {
+  const aKeys = Object.keys(a);
+  const bKeys = Object.keys(b);
+  return aKeys.every(key => bKeys.includes(key)) && bKeys.every(key => aKeys.includes(key));
+};
+
 export const createStore = initialState => {
   let state = initialState;
   const listeners = new Set();
@@ -24,17 +30,20 @@ export const createStore = initialState => {
 };
 
 export const createCompositeStore = assignments => {
+  let state = Object.keys(assignments).reduce((acc, key) => ({ ...acc, [key]: assignments[key].get() }), {});
   let blockListening = false;
 
-  const get = () => Object.keys(assignments).reduce((acc, key) => ({ ...acc, [key]: assignments[key].get() }), {});
+  const get = () => state;
 
   const set = valueOrReducer => {
-    const nextState = isReducer(valueOrReducer) ? valueOrReducer(get()) : valueOrReducer;
+    const nextState = isReducer(valueOrReducer) ? valueOrReducer(state) : valueOrReducer;
+    if (!hasTheSameKeys(state, nextState)) throw new Error('Composite value is not consequent');
     const lastModifiedIndex = Object.keys(assignments).reduce(
       (lastIndex, key, index) => (assignments[key].get() !== nextState[key] ? index : lastIndex),
       -1
     );
-    if (lastModifiedIndex === -1) return nextState;
+    if (lastModifiedIndex === -1) return state;
+    state = nextState;
     blockListening = true;
     Object.keys(assignments).forEach((key, i) => {
       if (i === lastModifiedIndex) blockListening = false;
@@ -54,13 +63,16 @@ export const createCompositeStore = assignments => {
 };
 
 export const createMemoStore = (combiner, dependencies) => {
+  let state;
   let prevValues;
 
   const get = () => {
     const values = dependencies.map(store => store.get());
+    if (Array.isArray(prevValues) && values.every((value, i) => value === prevValues[i])) return state;
     const value = combiner(...values);
     prevValues = values;
-    return value;
+    state = value;
+    return state;
   };
 
   const subscribe = listener => {
