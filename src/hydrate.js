@@ -6,14 +6,15 @@ import { compose } from './store';
 let state;
 
 export const hydrate = stores => {
+  if (state) return;
   state = compose(getPrimitiveStores(stores));
 
   if (IS_SERVER) return;
 
   const hiddenInput = window.document.getElementById(HYDRATOR_ID);
   if (!hiddenInput) return;
-  const hydratedState = JSON.parse(hiddenInput.value);
-  state.set(hydratedState);
+
+  state.set(JSON.parse(hiddenInput.value));
 };
 
 export const Hydrator = React.memo(function Hydrator() {
