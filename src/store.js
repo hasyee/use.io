@@ -1,12 +1,7 @@
-const isReducer = valueOrReducer => typeof valueOrReducer === 'function';
+import { isReducer, hasTheSameKeys, bindActions } from './helpers';
+import { wrap } from './hooks';
 
-const hasTheSameKeys = (a, b) => {
-  const aKeys = Object.keys(a);
-  const bKeys = Object.keys(b);
-  return aKeys.every(key => bKeys.includes(key)) && bKeys.every(key => aKeys.includes(key));
-};
-
-export const createStore = initialState => {
+export const state = (initialState, actions) => {
   let state = initialState;
   const listeners = new Set();
 
@@ -26,10 +21,13 @@ export const createStore = initialState => {
     return () => listeners.delete(listener);
   };
 
-  return { get, set, subscribe };
+  const boundActions = bindActions(actions, set);
+
+  const store = { ...boundActions, get, set, subscribe, hook: () => wrap(store) };
+  return store;
 };
 
-export const createCompositeStore = assignments => {
+export const compose = (assignments, actions) => {
   let state = Object.keys(assignments).reduce((acc, key) => ({ ...acc, [key]: assignments[key].get() }), {});
   let blockListening = false;
 
@@ -59,10 +57,13 @@ export const createCompositeStore = assignments => {
     return () => unsubscribes.forEach(unsubscribe => unsubscribe());
   };
 
-  return { get, set, subscribe, assignments };
+  const boundActions = bindActions(actions, set);
+
+  const store = { ...boundActions, get, set, subscribe, assignments, hook: () => wrap(store) };
+  return store;
 };
 
-export const createMemoStore = (combiner, dependencies) => {
+export const memo = (combiner, dependencies) => {
   let state;
   let prevValues;
 
@@ -84,5 +85,6 @@ export const createMemoStore = (combiner, dependencies) => {
     return () => unsubscribes.forEach(unsubscribe => unsubscribe());
   };
 
-  return { get, subscribe, dependencies };
+  const store = { get, subscribe, dependencies, hook: () => wrap(store) };
+  return store;
 };
