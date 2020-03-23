@@ -2,17 +2,17 @@ import React, { useState, useEffect } from 'react';
 import { HYDRATOR_ID, IS_SERVER } from './consts';
 import { getState } from './helpers';
 
-let storesForHydration;
+let stores;
 
-export const hydrate = stores => {
-  storesForHydration = stores;
+export const hydrate = s => {
+  stores = s;
+  
+  if (IS_SERVER) return;
 
-  if (!IS_SERVER) {
-    const hiddenInput = window.document.getElementById(HYDRATOR_ID);
-    if (!hiddenInput) return;
-    const hydratedState = JSON.parse(hiddenInput.value);
-    Object.keys(hydratedState).forEach(key => storesForHydration[key].set(hydratedState[key]));
-  }
+  const hiddenInput = window.document.getElementById(HYDRATOR_ID);
+  if (!hiddenInput) return;
+  const hydratedState = JSON.parse(hiddenInput.value);
+  Object.keys(hydratedState).forEach(key => stores[key].set(hydratedState[key]));
 };
 
 export const Hydrator = React.memo(function Hydrator() {
@@ -24,6 +24,6 @@ export const Hydrator = React.memo(function Hydrator() {
   return React.createElement('input', {
     id: HYDRATOR_ID,
     type: 'hidden',
-    value: JSON.stringify(getState(storesForHydration))
+    value: JSON.stringify(getState(stores))
   });
 });
