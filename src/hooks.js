@@ -1,26 +1,15 @@
-import { useLayoutEffect, useEffect, useCallback, useMemo, useReducer, useRef } from 'react';
-import { STORE } from './consts';
-import { createStore, createCompositeStore, createMemoStore } from './store';
+import { useRef, useReducer, useCallback, useMemo } from 'react';
+import { useIsomorphicLayoutEffect } from './helpers';
 
-export const useIsomorphicLayoutEffect =
-  typeof window !== 'undefined' &&
-  typeof window.document !== 'undefined' &&
-  typeof window.document.createElement !== 'undefined'
-    ? useLayoutEffect
-    : useEffect;
-
-const use = (store, updater, isSensitive = true, debugInfo) => {
+const useIO = (store, debugInfo) => {
   const state = useRef(store.get());
+  const isSensitive = useRef(false);
   state.current = store.get();
   const [, forceRender] = useReducer(n => n + 1, 0);
 
-  const update = useMemo(() => (!!store.set && !!updater ? (...args) => store.set(updater(...args)) : store.set), [
-    store,
-    updater
-  ]);
-
   const listener = useCallback(nextState => {
-    if (!isSensitive || state.current === nextState) return;
+    if (!isSensitive.current || state.current === nextState) return;
+    if (debugInfo) console.log('forceRender', debugInfo, nextState);
     forceRender();
   }, []);
 
@@ -28,36 +17,22 @@ const use = (store, updater, isSensitive = true, debugInfo) => {
     return store.subscribe(listener);
   }, []);
 
-  if (update) {
-    const returnValue = [state.current, update];
-    return returnValue;
-  } else {
-    return state.current;
-  }
+  const boundStore = useMemo(
+    () => ({
+      ...store,
+      get current() {
+        isSensitive.current = true;
+        return state.current;
+      }
+    }),
+    []
+  );
+
+  return boundStore;
 };
 
-const wrap = (store, updater) => {
-  const useStore = (isSensitive, debugInfo) => use(store, updater, isSensitive, debugInfo);
-  Object.defineProperty(useStore, STORE, { value: store, configurable: false, enumerable: false, writable: false });
+export const wrap = store => {
+  const useStore = debugInfo => useIO(store, debugInfo);
+  useStore.io = () => store;
   return useStore;
 };
-
-export const state = (initialState, updater) => wrap(createStore(initialState), updater);
-
-export const compose = (hookAssignments, updater) =>
-  wrap(
-    createCompositeStore(
-      Object.keys(hookAssignments).reduce((acc, key) => ({ ...acc, [key]: hookAssignments[key][STORE] }), {})
-    ),
-    updater
-  );
-
-export const memo = (combiner, dependencies) =>
-  wrap(
-    createMemoStore(
-      combiner,
-      dependencies.map(hook => hook[STORE])
-    )
-  );
-
-export const constant = c => () => c;
