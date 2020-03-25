@@ -1,7 +1,7 @@
 import { useRef, useReducer, useCallback, useMemo } from 'react';
 import { useIsomorphicLayoutEffect } from './helpers';
 
-const useIO = (store, debugInfo) => {
+const useIO = (store, debugLabel) => {
   const state = useRef(store.get());
   const isSensitive = useRef(false);
   state.current = store.get();
@@ -9,7 +9,7 @@ const useIO = (store, debugInfo) => {
 
   const listener = useCallback(nextState => {
     if (!isSensitive.current || state.current === nextState) return;
-    if (debugInfo) console.log('forceRender', debugInfo, nextState);
+    if (debugLabel) console.log('forceRender', debugLabel, nextState);
     forceRender();
   }, []);
 
@@ -27,4 +27,4 @@ const useIO = (store, debugInfo) => {
   return result;
 };
 
-export const wrap = store => debugInfo => useIO(store, debugInfo);
+export const wrap = store => debugLabel => useIO(store, debugLabel);
