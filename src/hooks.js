@@ -17,22 +17,14 @@ const useIO = (store, debugInfo) => {
     return store.subscribe(listener);
   }, []);
 
-  const boundStore = useMemo(
-    () => ({
-      ...store,
-      get current() {
-        isSensitive.current = true;
-        return state.current;
-      }
-    }),
-    []
-  );
-
-  return boundStore;
+  const result = [store, state.current];
+  Object.defineProperty(result, 1, {
+    get: () => {
+      isSensitive.current = true;
+      return state.current;
+    }
+  });
+  return result;
 };
 
-export const wrap = store => {
-  const useStore = debugInfo => useIO(store, debugInfo);
-  useStore.io = () => store;
-  return useStore;
-};
+export const wrap = store => debugInfo => useIO(store, debugInfo);
