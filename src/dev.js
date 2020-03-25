@@ -35,9 +35,9 @@ const initGlobalObject = stores => {
 
 const initLogger = (stores, primitivesOnly = true) =>
   Object.keys(stores).forEach(stateName => {
-    const isComplex = 'assignments' in stores[stateName] || 'dependencies' in stores[stateName];
-    if (primitivesOnly && isComplex) return;
-    stores[stateName].subscribe(state => {
+    const store = stores[stateName];
+    if (primitivesOnly && !store.primitive) return;
+    store.subscribe(state => {
       console.log(stateName, '=', state);
       /* if (window.io.devTools) {
         window.io.devTools.sendLog(stateName, state);

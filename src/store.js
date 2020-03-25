@@ -23,68 +23,67 @@ export const state = (initialState, actions) => {
 
   const boundActions = bindActions(actions, set);
 
-  const store = { ...boundActions, get, set, subscribe, hook: () => wrap(store) };
+  const store = { ...boundActions, get, set, subscribe, primitive: true, hook: () => wrap(store) };
   return store;
 };
 
-export const compose = (assignments, actions) => {
-  let state = Object.keys(assignments).reduce((acc, key) => ({ ...acc, [key]: assignments[key].get() }), {});
+export const compose = (map, actions) => {
+  let state = {};
   let blockListening = false;
 
-  const get = () => state;
+  const get = () => {
+    if (Object.keys(map).every(key => map[key].get() === state[key])) return state;
+    state = Object.keys(map).reduce((acc, key) => ({ ...acc, [key]: map[key].get() }), {});
+    return state;
+  };
 
   const set = valueOrReducer => {
     const nextState = isReducer(valueOrReducer) ? valueOrReducer(state) : valueOrReducer;
     if (!hasTheSameKeys(state, nextState)) throw new Error('Composite value is not consequent');
-    const lastModifiedIndex = Object.keys(assignments).reduce(
-      (lastIndex, key, index) => (assignments[key].get() !== nextState[key] ? index : lastIndex),
+    const lastModifiedIndex = Object.keys(map).reduce(
+      (lastIndex, key, index) => (map[key].get() !== nextState[key] ? index : lastIndex),
       -1
     );
     if (lastModifiedIndex === -1) return state;
-    state = nextState;
     blockListening = true;
-    Object.keys(assignments).forEach((key, i) => {
+    Object.keys(map).forEach((key, i) => {
       if (i === lastModifiedIndex) blockListening = false;
-      assignments[key].set(nextState[key]);
+      map[key].set(nextState[key]);
     });
-    return nextState;
+    return get();
   };
 
   const subscribe = listener => {
-    const unsubscribes = Object.keys(assignments).map(key =>
-      assignments[key].subscribe(() => !blockListening && listener(get()))
-    );
+    const unsubscribes = Object.keys(map).map(key => map[key].subscribe(() => !blockListening && listener(get())));
     return () => unsubscribes.forEach(unsubscribe => unsubscribe());
   };
 
   const boundActions = bindActions(actions, set);
 
-  const store = { ...boundActions, get, set, subscribe, assignments, hook: () => wrap(store) };
+  const store = { ...boundActions, get, set, subscribe, primitive: false, hook: () => wrap(store) };
   return store;
 };
 
-export const memo = (combiner, dependencies) => {
+export const memo = (combiner, deps) => {
   let state;
-  let prevValues;
+  let values = Array.from({ length: deps.length });
 
   const get = () => {
-    const values = dependencies.map(store => store.get());
-    if (Array.isArray(prevValues) && values.every((value, i) => value === prevValues[i])) return state;
-    const value = combiner(...values);
-    prevValues = values;
-    state = value;
+    if (values.every((prevValue, i) => prevValue === deps[i].get())) return state;
+    values = deps.map(dep => dep.get());
+    state = combiner(...values);
     return state;
   };
 
   const subscribe = listener => {
-    const unsubscribes = dependencies.map((store, i) =>
+    const unsubscribes = deps.map((store, i) =>
       store.subscribe(nextValue => {
-        if (nextValue !== prevValues[i]) listener(get());
+        if (nextValue !== values[i]) listener(get());
       })
     );
     return () => unsubscribes.forEach(unsubscribe => unsubscribe());
   };
 
-  const store = { get, subscribe, dependencies, hook: () => wrap(store) };
+  const store = { get, subscribe, primitive: false, hook: () => wrap(store) };
   return store;
 };

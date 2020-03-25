@@ -37,8 +37,6 @@ export function compose<T, U extends Updater<T>>(
 
 export function memo<T, D1, D2>(combiner: Combiner<T, D1, D2>, dependencies: Dependencies<D1, D2>): MemoHook<T>;
 
-export function constant<T>(constant: T): T;
-
 export function deepMergeUpdater<T>(diff: Diff<T>): (state: T) => T;
 
 export function shallowMergeUpdater<T>(diff: Diff<T>): (state: T) => T;
@@ -47,7 +45,6 @@ export declare const io: {
   state: typeof state;
   compose: typeof compose;
   memo: typeof memo;
-  constant: typeof constant;
   deepMergeUpdater: typeof deepMergeUpdater;
   shallowMergeUpdater: typeof shallowMergeUpdater;
 };
